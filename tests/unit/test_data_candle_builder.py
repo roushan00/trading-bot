@@ -30,9 +30,10 @@ def test_candle_builder__single_period__no_complete_until_next() -> None:
 
 def test_candle_builder__period_rollover__emits_candle() -> None:
     builder = CandleBuilder(timeframes=["1min"])
+    # Volumes are cumulative (as SmartAPI provides); delta between ticks is the candle volume
     t1 = _make_tick("RELIANCE", "100.00", 0, 10, volume=50)
-    t2 = _make_tick("RELIANCE", "102.00", 0, 30, volume=70)
-    t3 = _make_tick("RELIANCE", "103.00", 1, 5, volume=30)
+    t2 = _make_tick("RELIANCE", "102.00", 0, 30, volume=170)
+    t3 = _make_tick("RELIANCE", "103.00", 1, 5, volume=200)
 
     builder.on_tick(t1)
     builder.on_tick(t2)
@@ -51,14 +52,15 @@ def test_candle_builder__period_rollover__emits_candle() -> None:
 
 def test_candle_builder__ohlcv_correctness__100_ticks() -> None:
     builder = CandleBuilder(timeframes=["1min"])
-    ticks = []
     prices = [Decimal("100")] + [Decimal(str(100 + i * 0.5)) for i in range(1, 50)] + \
              [Decimal(str(124.5 - i * 0.5)) for i in range(50)]
 
     completed_candles: list = []
+    cumulative_volume = 0
     for i, price in enumerate(prices):
         second = i % 60
         minute = i // 60
+        cumulative_volume += 10
         t = Tick(
             symbol="TEST",
             token="9999",
@@ -67,20 +69,21 @@ def test_candle_builder__ohlcv_correctness__100_ticks() -> None:
             high=price,
             low=price,
             close=price,
-            volume=10,
+            volume=cumulative_volume,
             timestamp=datetime(2026, 5, 28, 10, minute, second, tzinfo=IST),
         )
         completed_candles.extend(builder.on_tick(t))
 
     flushed = builder.flush_all()
-    # on_tick already emitted completed candles; flush returns the remaining partial
-    # Collect all candles: completed during ticks + flushed
     all_candles = completed_candles + flushed
     assert len(all_candles) >= 1
     sorted_candles = sorted(all_candles, key=lambda c: c.timestamp)
     assert sorted_candles[0].open == Decimal("100")
+    # Each candle's first tick sets the cumulative baseline (no volume counted).
+    # With 2 candle periods, 2 baseline ticks are excluded → (100 - 2) * 10 = 980
     total_volume = sum(c.volume for c in all_candles)
-    assert total_volume == 10 * len(prices)
+    num_candles = len(all_candles)
+    assert total_volume == 10 * (len(prices) - num_candles)
 
 
 def test_candle_builder__5min_timeframe__groups_correctly() -> None:
