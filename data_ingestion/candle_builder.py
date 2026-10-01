@@ -30,16 +30,21 @@ class CandleAccumulator:
     close: Decimal = Decimal("0")
     volume: int = 0
     tick_count: int = 0
+    _last_cumulative_volume: int = 0
 
     def add_tick(self, tick: Tick) -> None:
         if self.tick_count == 0:
             self.open = tick.ltp
+            self._last_cumulative_volume = tick.volume
+        else:
+            delta = tick.volume - self._last_cumulative_volume
+            self.volume += max(delta, 0)
+            self._last_cumulative_volume = tick.volume
         if tick.ltp > self.high:
             self.high = tick.ltp
         if tick.ltp < self.low:
             self.low = tick.ltp
         self.close = tick.ltp
-        self.volume += tick.volume
         self.tick_count += 1
 
     def is_empty(self) -> bool:

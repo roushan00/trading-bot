@@ -1,3 +1,4 @@
+import asyncio
 import json
 from datetime import datetime
 from decimal import Decimal
@@ -22,10 +23,13 @@ CANDLE_BATCH_SIZE = 50
 class RedisTickCache:
     def __init__(self) -> None:
         self._redis: redis.Redis | None = None
+        self._lock = asyncio.Lock()
 
     async def _get_redis(self) -> redis.Redis:
         if self._redis is None:
-            self._redis = redis.from_url(settings.REDIS_URL, decode_responses=True)
+            async with self._lock:
+                if self._redis is None:
+                    self._redis = redis.from_url(settings.REDIS_URL, decode_responses=True)
         return self._redis
 
     async def store_tick(self, tick: Tick) -> None:

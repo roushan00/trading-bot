@@ -1,6 +1,8 @@
 import asyncio
+import inspect
 import json
-from typing import Callable
+from collections.abc import Awaitable
+from typing import Callable, Union
 
 import structlog
 from SmartApi.smartWebSocketV2 import SmartWebSocketV2
@@ -25,7 +27,7 @@ class FeedHandler:
         self,
         auth: SmartAPIAuth,
         tokens: list[dict],
-        on_tick: Callable[[Tick], None] | None = None,
+        on_tick: Union[Callable[[Tick], None], Callable[[Tick], Awaitable[None]]] | None = None,
         mode: int = MODE_SNAP_QUOTE,
     ) -> None:
         self._auth = auth
@@ -89,7 +91,10 @@ class FeedHandler:
                     data["name"] = self._token_map[token]
                 tick = Tick.from_smartapi(data)
                 if self._on_tick:
-                    self._on_tick(tick)
+                    result = self._on_tick(tick)
+                    if inspect.isawaitable(result):
+                        loop = asyncio.get_event_loop()
+                        loop.call_soon_threadsafe(asyncio.ensure_future, result)
             except Exception:
                 logger.error("tick_parse_error", exc_info=True, raw=str(message)[:200])
 
@@ -110,7 +115,8 @@ class FeedHandler:
         self._ws.on_close = on_close
 
         logger.info("websocket_connecting", tokens=len(self._tokens))
-        self._ws.connect()
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, self._ws.connect)
 
     async def disconnect(self) -> None:
         self._running = False

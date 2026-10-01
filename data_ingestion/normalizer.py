@@ -17,6 +17,12 @@ class Tick:
     volume: int
     timestamp: datetime
 
+    @staticmethod
+    def _ensure_ist(dt: datetime) -> datetime:
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=IST)
+        return dt
+
     @classmethod
     def from_smartapi(cls, raw: dict) -> "Tick":
         return cls(
@@ -42,7 +48,9 @@ class Tick:
             low=Decimal(str(data["low"])),
             close=Decimal(str(data["close"])),
             volume=int(data["volume"]),
-            timestamp=datetime.fromisoformat(data["timestamp"]) if isinstance(data["timestamp"], str) else data["timestamp"],
+            timestamp=cls._ensure_ist(
+                datetime.fromisoformat(data["timestamp"]) if isinstance(data["timestamp"], str) else data["timestamp"]
+            ),
         )
 
     def to_dict(self) -> dict:
