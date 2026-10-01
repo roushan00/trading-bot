@@ -23,6 +23,3 @@ def setup_logging() -> None:
         logger_factory=structlog.PrintLoggerFactory(file=sys.stderr),
         cache_logger_on_first_use=True,
     )
-
-
-setup_logging()

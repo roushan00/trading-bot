@@ -1,4 +1,5 @@
 from datetime import time
+from decimal import Decimal
 from zoneinfo import ZoneInfo
 
 IST = ZoneInfo("Asia/Kolkata")
@@ -41,6 +42,6 @@ NSE_HOLIDAYS_2026 = [
 TIMEFRAMES = ["1min", "5min", "15min", "1hr", "1D"]
 
 # Brokerage & fees (as fraction, not percent)
-BROKERAGE_RATE = "0.0003"       # 0.03%
-STT_RATE = "0.00025"            # 0.025% on sell side
-SLIPPAGE_RATE = "0.0005"        # 0.05% default slippage
+BROKERAGE_RATE = Decimal("0.0003")       # 0.03%
+STT_RATE = Decimal("0.00025")            # 0.025% on sell side
+SLIPPAGE_RATE = Decimal("0.0005")        # 0.05% default slippage
