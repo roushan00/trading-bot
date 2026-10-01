@@ -24,6 +24,12 @@ class Signal:
     take_profit: Decimal | None = None
     metadata: dict = field(default_factory=dict)
 
+    @staticmethod
+    def _ensure_ist(dt: datetime) -> datetime:
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=IST)
+        return dt
+
     def to_json(self) -> str:
         return json.dumps({
             "strategy_name": self.strategy_name,
@@ -44,7 +50,7 @@ class Signal:
             symbol=d["symbol"],
             direction=Direction(d["direction"]),
             price=Decimal(d["price"]),
-            timestamp=datetime.fromisoformat(d["timestamp"]),
+            timestamp=cls._ensure_ist(datetime.fromisoformat(d["timestamp"])),
             stop_loss=Decimal(d["stop_loss"]) if d.get("stop_loss") else None,
             take_profit=Decimal(d["take_profit"]) if d.get("take_profit") else None,
             metadata=d.get("metadata", {}),

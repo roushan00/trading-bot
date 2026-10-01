@@ -3,7 +3,10 @@ import sys
 
 import structlog
 
+from config.logging import setup_logging
 from config.settings import settings
+
+setup_logging()
 
 logger = structlog.get_logger(__name__)
 

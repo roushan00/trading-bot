@@ -196,7 +196,7 @@ class SimulationEngine:
 
         if self._trades:
             print(f"\n  TRADE LOG:")
-            header = f"  {'#':>3}  {'Symbol':<10} {'Dir':<5} {'Qty':>5}  {'Fill ₹':>10}  {'Strategy':<18}  Timestamp"
+            header = f"  {'#':>3}  {'Symbol':<10} {'Dir':<5} {'Qty':>5}  {'Fill(Rs.)':>10}  {'Strategy':<18}  Timestamp"
             print(header)
             print(f"  {'-'*3}  {'-'*10} {'-'*5} {'-'*5}  {'-'*10}  {'-'*18}  {'-'*19}")
             for t in self._trades:
